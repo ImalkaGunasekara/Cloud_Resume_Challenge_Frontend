@@ -1,0 +1,64 @@
+# name: Upload Website to S3
+
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches:
+#     - main # It gets triggered when there is a push/change to the main branch
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest # It does a deploy using the latest ubuntu container (This container is most probably a Docker container that's running on a Ubuntu server)
+#     steps:
+#     - uses: actions/checkout@master # Get the code
+#     - uses: jakejarvis/s3-sync-action@master # This is an external file that we are using for our advantage (This file has been created by another person and made available in GitHub)
+#                                              # It is uses that GitHub Action to sync a directory with a remote S3 bucket
+#       with:
+#         args: --acl private --follow-symlinks --delete # If there is any additional files in the S3 bucket there, delete them
+#       env:
+#         # The following environment properties are some/sectrets/ credentials
+#         # That GitHub Actions will need to access your S3 bucket. 
+#         # Because you don't want to mention the actual credentials here.
+#         # These environment properties will bes used by that jakejarvis external code
+#         AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+#         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#         AWS_REGION: 'us-east-1'
+#         SOURCE_DIR: 'website' # By setting SOURCE_DIR to '.', the action will use the root directory of the repository as the source for the files to be uploaded to the S3 bucket.
+
+
+name: Deploy Website to S3 and Invalidate CloudFront
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Sync website to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl private --follow-symlinks --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: 'us-east-1'
+          SOURCE_DIR: 'website'
+
+      - name: Invalidate CloudFront cache
+        uses: aws-actions/aws-cloudfront-invalidate-action@v2
+        with:
+          distribution-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+          paths: '/*'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: 'us-east-1'
