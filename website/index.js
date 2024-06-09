@@ -1,5 +1,5 @@
 // Replace 'YOUR_API_GATEWAY_URL' with the actual URL of your API Gateway endpoint
-const apiUrl = 'https://0lpdcjnrvb.execute-api.us-east-1.amazonaws.com/dev/example';
+const apiUrl = 'https://oxvqittgd2.execute-api.us-east-1.amazonaws.com/dev/example';
 
 async function fetchViewCount() {
     try {
